@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ellie Universe – Simulation Map</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
+
+  :root {
+    --ink: #1a1a2e;
+    --ink-soft: #3d3d5c;
+    --ink-muted: #7a7a9a;
+    --paper: #f7f6f2;
+    --paper-warm: #eeeae0;
+    --ellie: #2a7a5a;
+    --ellie-light: #d6f0e4;
+    --gap: #e8745a;
+    --gap-light: #fce8e3;
+    --gold: #b8860b;
+    --gold-light: #fdf5dc;
+    --border: #d8d4c8;
+    --rule: #c8c4b8;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--paper); color: var(--ink); font-family: "DM Sans", sans-serif; font-weight: 400; line-height: 1.6; font-size: 15px; }
+
+  header { background: var(--ink); color: var(--paper); padding: 56px 64px 48px; position: relative; overflow: hidden; }
+  header::after { content: ""; position: absolute; right: -40px; top: -40px; width: 320px; height: 320px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.08); }
+  header::before { content: ""; position: absolute; right: 60px; top: 60px; width: 180px; height: 180px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.05); }
+  .header-eyebrow { font-family: "DM Mono", monospace; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ellie-light); margin-bottom: 16px; }
+  h1 { font-family: "DM Serif Display", serif; font-size: clamp(36px,5vw,58px); line-height: 1.05; font-weight: 400; max-width: 640px; margin-bottom: 20px; }
+  .header-sub { color: rgba(247,246,242,0.6); font-size: 15px; max-width: 480px; line-height: 1.6; }
+  .header-meta { margin-top: 32px; display: flex; gap: 32px; font-family: "DM Mono", monospace; font-size: 12px; color: rgba(247,246,242,0.45); }
+  .header-meta span strong { display: block; color: var(--paper); font-size: 22px; font-family: "DM Serif Display", serif; font-weight: 400; line-height: 1; margin-bottom: 4px; }
+
+  main { max-width: 1100px; margin: 0 auto; padding: 64px 40px; }
+
+  .section-label { font-family: "DM Mono", monospace; font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-muted); margin-bottom: 24px; padding-bottom: 10px; border-bottom: 1px solid var(--rule); }
+
+  .timeline-section { margin-bottom: 80px; }
+  .timeline { position: relative; display: flex; flex-direction: column; }
+  .timeline-item { display: grid; grid-template-columns: 48px 1fr; gap: 0 24px; position: relative; }
+  .timeline-item:not(:last-child) .tl-spine::after { content: ""; position: absolute; left: 23px; top: 48px; bottom: -16px; width: 1px; background: var(--rule); }
+  .timeline-item.gap-item:not(:last-child) .tl-spine::after { border-left: 1px dashed var(--gap); background: none; width: 0; }
+  .tl-spine { position: relative; display: flex; align-items: flex-start; justify-content: center; padding-top: 16px; }
+  .tl-dot { width: 16px; height: 16px; border-radius: 50%; background: var(--ellie); border: 3px solid var(--paper); box-shadow: 0 0 0 1px var(--ellie); flex-shrink: 0; position: relative; z-index: 1; }
+  .tl-dot.gap { background: var(--paper); box-shadow: 0 0 0 1px var(--gap); border-color: var(--gap); }
+
+  .tl-card { background: white; border: 1px solid var(--border); border-radius: 8px; padding: 20px 24px; margin: 8px 0 24px; transition: box-shadow 0.2s; }
+  .tl-card:hover { box-shadow: 0 4px 20px rgba(26,26,46,0.08); }
+  .tl-card.gap-card { background: var(--gap-light); border-color: #f0b8ab; border-style: dashed; }
+  .tl-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 12px; }
+  .sim-number { font-family: "DM Mono", monospace; font-size: 11px; color: var(--ink-muted); flex-shrink: 0; padding-top: 2px; }
+  .sim-title { font-family: "DM Serif Display", serif; font-size: 20px; font-weight: 400; color: var(--ink); flex: 1; }
+  .gap-card .sim-title { color: var(--gap); font-style: italic; }
+  .sim-badge { font-family: "DM Mono", monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; padding: 3px 10px; border-radius: 20px; flex-shrink: 0; }
+  .badge-exists { background: var(--ellie-light); color: var(--ellie); }
+  .badge-wip { background: var(--gold-light); color: var(--gold); border: 1px solid #e8d080; }
+  .badge-gap { background: var(--gap-light); color: var(--gap); border: 1px solid #f0b8ab; }
+  .sim-premise { color: var(--ink-soft); font-size: 14px; line-height: 1.6; margin-bottom: 14px; }
+  .sim-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  .meta-pill { font-size: 12px; padding: 3px 12px; border-radius: 20px; background: var(--paper-warm); color: var(--ink-soft); border: 1px solid var(--border); }
+  .meta-pill.learner { background: var(--gold-light); color: var(--gold); border-color: #e8d080; }
+  .sim-scenarios { display: flex; flex-direction: column; gap: 6px; }
+  .scenario-row { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; }
+  .scenario-tag { font-family: "DM Mono", monospace; font-size: 10px; color: var(--ellie); background: var(--ellie-light); padding: 2px 8px; border-radius: 4px; flex-shrink: 0; margin-top: 2px; }
+  .gap-card .scenario-tag { color: var(--gap); background: white; border: 1px solid #f0b8ab; }
+  .scenario-text { color: var(--ink-soft); line-height: 1.5; }
+  .gap-note { font-size: 13px; color: var(--gap); font-style: italic; line-height: 1.6; }
+
+  .personas-section { margin-bottom: 80px; }
+  .personas-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px,1fr)); gap: 16px; }
+  .persona-card { background: white; border: 1px solid var(--border); border-radius: 8px; padding: 20px; }
+  .persona-avatar { width: 52px; height: 52px; border-radius: 50%; overflow: hidden; background: var(--paper-warm); border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; font-family: "DM Serif Display", serif; font-size: 20px; color: var(--ink-muted); margin-bottom: 12px; }
+  .persona-avatar.ellie-av { background: var(--ellie-light); border-color: var(--ellie); color: var(--ellie); }
+  .persona-avatar.alex-av { background: var(--gold-light); border-color: var(--gold); color: var(--gold); }
+  .persona-name { font-family: "DM Serif Display", serif; font-size: 17px; font-weight: 400; margin-bottom: 4px; }
+  .persona-role { font-size: 12px; color: var(--ink-muted); margin-bottom: 10px; line-height: 1.4; }
+  .persona-appears { font-size: 11px; font-family: "DM Mono", monospace; color: var(--ink-muted); border-top: 1px solid var(--border); padding-top: 10px; margin-top: 10px; line-height: 1.6; }
+  .persona-appears strong { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px; color: var(--ink-soft); }
+
+  .lo-section { margin-bottom: 80px; }
+  .lo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .lo-card { background: white; border: 1px solid var(--border); border-radius: 8px; padding: 20px 22px; }
+  .lo-sim-name { font-family: "DM Mono", monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--ellie); margin-bottom: 8px; }
+  .lo-list { list-style: none; font-size: 13px; color: var(--ink-soft); line-height: 1.7; }
+  .lo-list li::before { content: "→ "; color: var(--ink-muted); font-family: "DM Mono", monospace; font-size: 11px; }
+
+  .gaps-callout { background: var(--gap-light); border: 1px dashed #e8917d; border-radius: 8px; padding: 28px 32px; margin-bottom: 80px; }
+  .gaps-callout h3 { font-family: "DM Serif Display", serif; font-size: 22px; font-weight: 400; color: var(--gap); margin-bottom: 8px; }
+  .gaps-callout p { font-size: 14px; color: var(--ink-soft); margin-bottom: 20px; max-width: 640px; }
+  .gaps-list { display: flex; flex-direction: column; gap: 10px; }
+  .gap-row { display: flex; gap: 14px; align-items: flex-start; font-size: 13.5px; }
+  .gap-position { font-family: "DM Mono", monospace; font-size: 10px; background: white; border: 1px solid #e8917d; color: var(--gap); padding: 3px 10px; border-radius: 4px; flex-shrink: 0; white-space: nowrap;
+    margin-top: 2px;
+    min-width: 160px;
+    text-align: center;
+  }
+  .gap-desc { color: var(--ink-soft); line-height: 1.5; }
+  .gap-desc strong { color: var(--ink); font-weight: 500; }
+  .rules-section { margin-bottom: 80px; }
+  .rules-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .rule-card { background: white; border: 1px solid var(--border); border-radius: 8px; padding: 18px 20px; }
+  .rule-card h4 { font-size: 13px; font-weight: 600; margin-bottom: 8px; color: var(--ink); }
+  .rule-card p, .rule-card ul { font-size: 13px; color: var(--ink-soft); line-height: 1.6; }
+  .rule-card ul { list-style: none; padding: 0; }
+  .rule-card ul li::before { content: "· "; color: var(--ink-muted); }
+
+  footer { background: var(--ink); color: rgba(247,246,242,0.4); padding: 32px 64px; font-size: 12px; font-family: "DM Mono", monospace; display: flex; justify-content: space-between; align-items: center; }
+  footer span { color: rgba(247,246,242,0.7); }
+
+  @media (max-width: 720px) {
+    header { padding: 40px 24px; }
+    main { padding: 40px 20px; }
+    .lo-grid { grid-template-columns: 1fr; }
+    .personas-grid { grid-template-columns: 1fr 1fr; }
+    footer { flex-direction: column; gap: 8px; padding: 24px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-eyebrow">Learning & Development · Simulation Universe</div>
+  <h1>Ellie Universe</h1>
+  <p class="header-sub">A complete map of Ellie's story across four simulations – characters, learning objectives, narrative gaps, and notes for IDs.</p>
+  <div class="header-meta">
+    <span><strong>6</strong>simulations</span>
+    <span><strong>18</strong>scenarios</span>
+    <span><strong>612</strong>videos total</span>
+    <span><strong>~20 min</strong>per simulation</span>
+  </div>
+
+    <div style="margin-top:28px;padding-top:28px;border-top:1px solid rgba(247,246,242,0.12);max-width:640px;">
+      <p style="font-size:14px;color:rgba(247,246,242,0.65);line-height:1.75;">Ellie Universe is a series of simulations for early-career professionals navigating job interviews and starting work. Each simulation puts the learner in a real moment from Ellie's story — a pre-interview prep session, a difficult debrief, a job interview, first weeks at work. This map documents the narrative arc, the characters, the learning objectives, and everything IDs need to build what comes next.</p>
+    </div>
+</header>
+
+<main>
+
+  <section class="timeline-section">
+    <div class="section-label">01 · Narrative timeline – canonical story order</div>
+    <div class="timeline">
+
+      <div class="timeline-item">
+        <div class="tl-spine"><div class="tl-dot"></div></div>
+        <div class="tl-card">
+          <div class="tl-card-head">
+            <span class="sim-number">SIM 01</span>
+            <span class="sim-title">Ellie on the Spot</span>
+            <span class="sim-badge badge-exists">✓ Complete</span>
+          </div>
+          <p class="sim-premise">Ellie is 18 and has made it to the final stage of an interview for a Food & Beverage Assistant role at Pinecrest Hotels. Tomorrow is the real interview. Tonight she's sitting with Michael, who got his first job years ago and still remembers what it felt like. Learner plays Michael.</p>
+          <div class="sim-meta">
+            <span class="meta-pill learner">Learner plays: Michael</span>
+            <span class="meta-pill">Characters: Ellie, Michael, Alex</span>
+            <span class="meta-pill">Pinecrest Hotels</span>
+          </div>
+          <div class="sim-scenarios">
+            <div class="scenario-row">
+              <span class="scenario-tag">S1</span>
+              <span class="scenario-text"><strong>How Do I Talk About Myself?</strong> – Ellie is nervous about "tell me about yourself." She needs Michael to help her find her own voice – not hand her a script.</span>
+            </div>
+            <div class="scenario-row">
+              <span class="scenario-tag">S2</span>
+              <span class="scenario-text"><strong>Why Do I Actually Want This?</strong> – Ellie hasn't researched the hotel. Michael helps her see that motivation without preparation sounds empty.</span>
+            </div>
+            <div class="scenario-row">
+              <span class="scenario-tag">S3</span>
+              <span class="scenario-text"><strong>How Do I Handle the Hard Part?</strong> – Ellie has a difficult work history she'll be asked about. Michael helps her find the line between lying, oversharing, and honest framing.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="tl-spine"><div class="tl-dot"></div></div>
+        <div class="tl-card">
+          <div class="tl-card-head">
+            <span class="sim-number">SIM 02</span>
+            <span class="sim-title">Ellie and Tom</span>
+            <span class="sim-badge badge-exists">✓ Complete</span>
+          </div>
+          <p class="sim-premise">Ellie has come out of a job interview that didn't go well. She's arranged to meet Tom – a senior professional and old friend of her father – to debrief and figure out what went wrong. Learner plays Tom.</p>
+          <div class="sim-meta">
+            <span class="meta-pill learner">Learner plays: Tom</span>
+            <span class="meta-pill">Characters: Ellie, Tom, Alex</span>
+            <span class="meta-pill">Café setting</span>
+          </div>
+          <div class="sim-scenarios">
+            <div class="scenario-row">
+              <span class="scenario-tag">S1</span>
+              <span class="scenario-text"><strong>Is This Really on Me?</strong> – Ellie arrives late and explains it away. Tom has to decide whether to let it go or help her see what it signals.</span>
+            </div>
+            <div class="scenario-row">
+              <span class="scenario-tag">S2</span>
+              <span class="scenario-text"><strong>What Do I Actually Bring?</strong> – Ellie undersells her experience or reaches for generic phrases. Tom helps her connect real experience to what employers actually want.</span>
+            </div>
+            <div class="scenario-row">
+              <span class="scenario-tag">S3</span>
+              <span class="scenario-text"><strong>What Do I Do With This?</strong> – Ellie received a vague rejection. Tom helps her see that asking for feedback is professional, not desperate – and how to do it well.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="tl-spine"><div class="tl-dot"></div></div>
+        <div class="tl-card">
+          <div class="tl-card-head">
+            <span class="sim-number">SIM 03</span>
+            <span class="sim-title">This Is It, Ellie</span>
+            <span class="sim-badge badge-exists">✓ Complete</span>
+          </div>
+          <p class="sim-premise">Ellie is at Canopy, a global communications agency, for an interview for their competitive Communications Trainee program. She's prepared. Now it's time to put it into practice. Learner plays Ellie. Interviewer is Claire.</p>
+          <div class="sim-meta">
+            <span class="meta-pill learner">Learner plays: Ellie</span>
+            <span class="meta-pill">Characters: Ellie, Claire, Alex</span>
+            <span class="meta-pill">Canopy agency</span>
+            
+          </div>
+          <div class="sim-scenarios">
+            <div class="scenario-row">
+              <span class="scenario-tag">S1</span>
+              <span class="scenario-text"><strong>Walk In Ready</strong> – First impression at Canopy. How Ellie introduces herself, whether she knows the appointment details, and how naturally she uses her research about the company.</span>
+            </div>
+            <div class="scenario-row">
+              <span class="scenario-tag">S2</span>
+              <span class="scenario-text"><strong>Read the Room</strong> – The interview is underway. Claire is watching whether Ellie is genuinely present – listening and responding specifically – or just delivering prepared answers that don't quite fit.</span>
+            </div>
+            <div class="scenario-row">
+              <span class="scenario-tag">S3</span>
+              <span class="scenario-text"><strong>Make It Count</strong> – Final stretch. Claire asks what Ellie actually brings: her experience, her self-awareness, and where she's headed.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="tl-spine"><div class="tl-dot"></div></div>
+        <div class="tl-card">
+          <div class="tl-card-head">
+            <span class="sim-number">SIM 04</span>
+            <span class="sim-title">John Through the Screen</span>
+            <span class="sim-badge badge-exists">✓ Complete</span>
+          </div>
+          <p class="sim-premise">Ellie has started at Canopy. The team is remote-first. John is a young professional on the team – not a manager, but the person everyone turns to. The simulation follows three separate conversations he has with colleagues navigating remote work. Learner role rotates per scenario.</p>
+          <div class="sim-meta">
+            <span class="meta-pill learner">S1: Ellie · S2: Michael · S3: Claire</span>
+            <span class="meta-pill">Characters: John, Ellie, Michael, Claire, Alex</span>
+            <span class="meta-pill">Remote-first company</span>
+          </div>
+          <div class="sim-scenarios">
+            <div class="scenario-row">
+              <span class="scenario-tag">S1</span>
+              <span class="scenario-text"><strong>Camera Ready</strong> – Ellie's first week. She joined a virtual team meeting late with a noisy background. John checks in. Does she take ownership or deflect?</span>
+            </div>
+            <div class="scenario-row">
+              <span class="scenario-tag">S2</span>
+              <span class="scenario-text"><strong>Don't Blame the Wi-Fi</strong> – Michael is experienced but struggling with remote tools and isolation. John checks in. Does Michael own the problem or explain it away?</span>
+            </div>
+            <div class="scenario-row">
+              <span class="scenario-tag">S3</span>
+              <span class="scenario-text"><strong>The Other Side of the Screen</strong> – John tells his manager Claire he's overwhelmed. Claire has to decide what kind of manager she'll be: open and listening, or closed and judging.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="tl-spine"><div class="tl-dot"></div></div>
+        <div class="tl-card">
+          <div class="tl-card-head">
+            <span class="sim-number">SIM 05</span>
+            <span class="sim-title">New Role, Same Michael</span>
+            <span class="sim-badge badge-exists">✓ Complete</span>
+          </div>
+          <p class="sim-premise">A reorganization has moved Michael into a new role a few days ago. He's capable enough to do the job, but not yet on solid ground. Claire has been his manager for a while — which means she already knows what he's made of. Learner plays Michael.</p>
+          <div class="sim-meta">
+            <span class="meta-pill learner">Learner plays: Michael</span>
+            <span class="meta-pill">Characters: Michael, Claire, Alex</span>
+            <span class="meta-pill">Remote-first company</span>
+          </div>
+          <div class="sim-scenarios">
+            <div class="scenario-row"><span class="scenario-tag">S1</span><span class="scenario-text"><strong>Knowing Your Limits</strong> – Claire assigns Michael a task that overlaps with his experience but includes elements he hasn't handled before. He has to decide how honest to be about where he actually stands.</span></div>
+            <div class="scenario-row"><span class="scenario-tag">S2</span><span class="scenario-text"><strong>Working With Your Manager</strong> – Claire cancels the financial reporting training for the third time. Michael has to respond without damaging the relationship or letting the knowledge gap slide.</span></div>
+            <div class="scenario-row"><span class="scenario-tag">S3</span><span class="scenario-text"><strong>Taking Ownership</strong> – Michael discovers an error in a cost report before Claire sends it to finance. He has to decide whether to tell her, how to frame it, and what to do next.</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="tl-spine"><div class="tl-dot"></div></div>
+        <div class="tl-card">
+          <div class="tl-card-head">
+            <span class="sim-number">SIM 06</span>
+            <span class="sim-title">Michael on Screen</span>
+            <span class="sim-badge badge-exists">✓ Complete</span>
+          </div>
+          <p class="sim-premise">Michael has landed an interview for a senior role at a remote-first company. He's well qualified — but he's never done a virtual interview. Tom, a senior professional who has worked remotely for years, offers to help him prepare over a video call. Learner plays Michael.</p>
+          <div class="sim-meta">
+            <span class="meta-pill learner">Learner plays: Michael</span>
+            <span class="meta-pill">Characters: Michael, Tom, Alex</span>
+            <span class="meta-pill">Video call</span>
+          </div>
+          <div class="sim-scenarios">
+            <div class="scenario-row"><span class="scenario-tag">S1</span><span class="scenario-text"><strong>Technical Setup &amp; Environment</strong> – Tom walks Michael through what actually matters: lighting, background, camera framing, software, and connection.</span></div>
+            <div class="scenario-row"><span class="scenario-tag">S2</span><span class="scenario-text"><strong>Presence &amp; Communication on Camera</strong> – Tom raises what most people miss: eye contact with the camera, posture, nodding, and how you come across when the interviewer can only see a frame.</span></div>
+            <div class="scenario-row"><span class="scenario-tag">S3</span><span class="scenario-text"><strong>Device Limitations &amp; Contingency Thinking</strong> – Michael is planning to use his phone. Tom helps him see what that means in practice and what a proper contingency plan looks like.</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- PERSONAS -->
+  <section class="personas-section">
+    <div class="section-label">02 · Characters</div>
+    <div class="personas-grid">
+
+      <div class="persona-card">
+        <div class="persona-avatar ellie-av" style="background-image:url('data:image/jpeg;base64,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');background-size:cover;background-position:center center;"></div>
+        <div class="persona-name">Ellie</div>
+        <div class="persona-role">Main character. 18, smart and personable, navigating her first steps into professional life.</div>
+        <div class="persona-appears"><strong>Appears in</strong>All 4 simulations. Learner plays Ellie in SIM 03 (S1–S3) and SIM 04 (S1).</div>
+      </div>
+
+      <div class="persona-card">
+        <div class="persona-avatar alex-av" style="background-image:url('data:image/jpeg;base64,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');background-size:cover;background-position:center center;"></div>
+        <div class="persona-name">Alex</div>
+        <div class="persona-role">Guide & narrator. Gives feedback at the end of every path. Warm, direct – never corporate.</div>
+        <div class="persona-appears"><strong>Appears in</strong>All 4 simulations. Every path endpoint.</div>
+      </div>
+
+      <div class="persona-card">
+        <div class="persona-avatar" style="background-image:url('data:image/jpeg;base64,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');background-size:cover;background-position:center center;"></div>
+        <div class="persona-name">Michael</div>
+        <div class="persona-role">About 15 years older than Ellie. Got his first job young, learned the hard way. Warm and honest. Learner plays him in SIM 01.</div>
+        <div class="persona-appears"><strong>Appears in</strong>SIM 01 (all scenarios) · SIM 04 (S2 – learner plays Michael).</div>
+      </div>
+
+      <div class="persona-card">
+        <div class="persona-avatar" style="background-image:url('data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAB4AHYDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwDtKMGnYoxXnWO+4mKXFLilxTsJsTFKBSSOkMTSSMERAWZj0A9a8g8W/Eq8nu3tdHn8i2U7fMVfnf3z2FXGLZDlY9buLy1s13XNxFCvq7gVlt4w8OoWB1i1yvXD5rwY2+sagxmkhupd3O5gxz+dM/svUeV+yyE/7tVyw6sT5+kT6CsvE2iagCbXVLZ8dt4B/I1rA5AI5Br5hezngbdLE8RHcjANdh4X8f6hpBS1nk+02g4CSnlB7GnyJr3WTztaSR7cBS4qppmpW2rWSXVs4ZWHI7qfQ1cAqbF3AClpcUuKLCEop2KKYFbFLiloxWdi7iYpaWkpiOA+JXiL7FZpo8Kky3I3yHoNueB+JrJ8KeC4o4kv9RiWS6k+cIRkIP8AGl1+0XUfiWIpD5iqUAB7ADOK76NI4wqkgHHArDFVHFKETqwdNNucii1iq8BQB7Cq0lohXG0H3raZc8Ag/So5LcBMnivOsz0rnMTaXFLlXjVlPVSM1xviXwglpbvf2IICcvEPT2r0WZokYgyJ+dTQ2cV7ZSKpWRXUgjrXRRlODujnrRhUVmcl8K9eha+n0uVykrpujXOQ+Ov4gV6vivB/DcEmkeP7EBDxcGIgccHI5r3ivVk76njpW0FoFGKcKgq4CilooEVqWjFAFQaMKMVLHA8pCopJrYtNHAw835VSVyWzzD+zg/j6/usDMUKlQf7zDH9DV8aCSGnubmSSQnLBTgVeu4wvj3Wdi4RY4AOO+01BqOn3d9FKIr2aAMMDywMj8TXJVl+8Z30Ip00SWMEMLqIyTj1Oas3rqsbbxgVnaLo89hLvknkkH+2e/rV29cyE5AOGGRXM3qdNrLQx5tHs7j55ocbuhLYNaekaPHYOZbd32MPmRjmsq+024uZYSLyZQsm8lTjeP7p9vpWvayvaDa0rS7jwCvStoyS6mU4dkcV4osV03xjbXkS/6yRJQPfODXqAIPNcZ4rsnu9Y0UouQWJc+iggmuxDV203eJ59VWlckxR3poNOrQyCiiigZGkbOwCjJrTtdJd8NKdo9K0LOzjhQHALetWmYKKhR7jbGwwRQLhFA96nBzUKZc57VL0qyGcjqkESeIbiVcZkVN2PUCoJ4QMOpxmpdQiePUbiUo3zuTk9/TFVmckFWzj1rzKr953R61HSKsxQ6kYB6HGc1Wni/eOeoxzUV/ZWd7AkFxAJo0O7ac4z2NZN/p0WoeWJjKfKkDqAxADDofepUe5rzaaFyKTeWRhhlOCp7VoWkCswO2s1YMSGRGJlb727vWlaySbguMetKMXzailNcug3WUhVYZpsCKLcrHv8wAq8p+UfSorqNZysckavHnJBH5VKo4ArupJ3Z59ZpxS66kgOKcDTccUAVuc4+im0UXA6hWwtNb529qzReM3HSlfUViXA5ai6Cxq71jXJIArPudUAJSEZPrVJTc3z9SFrStrCOEAkZaldvYLJGXPb3NxC8j54GcVkykeURnntXakLjBAxXHanEllfGFm+VhuT6Vz4iGikdWGnq4syDaXRhBlunYZJKqAOKzvJV7kxpLLnPGe36Vv+cAvB4rLeULc7gAM1zps7lUsrDPs13HfQFrkvEBhgVANb0KgHdVOMq+HbsKnWUE7UOataO7MG77Fkc8+tPA5qNCGQEHIqSu1HnPcWlHWkoFAh1FFFBQm52OFq/aaduw8p49KitoyWyBWl5ojXBPNJLuDJgUhXai9Khe7IOB1phMkvCjA9aY6pBG0ksioijLOxwB+NVcVi3EXfljXN+IwtxfCNl4RBg1i618WtA0oS2unu1/dqCA0Y/dqf97v+FbGqktptvqSkvGqgykf3GGd34H9M1NanJ03YuhNKqrnN3cV1DGfKO4ehrANzeGbDgg57iuykYYBHKnoRVKRYyfmUflXmxmenKCG2KSyxjzGO2tKPamAAABVJJ4rePkj2qXTbS41ychQY7FTiWTu/+yP6mripTlyoiVoR5nsWrI/Zra0ikDAziR0Y9CN2cZ9cHNXgc1h/FPUH0nQdOktXEcq3Q8vHbCn9K5bQ/ipZ3BEGrQm3kBx50Yyh9yO1eo6TS0PK9opN3PRs0tVrS9tr+BZ7SeOaJujI2RVgGsxi5ooooA1Ig7DbGPxqd1trG3a5vJkjjQZZ5GAUfia5Txf8QtN8JW/kQBLvUmHywK3Ce7kdPp1rwrxD4p1nxRcGTU7x3QHKwp8safRf61cKbepMppbHq/in4zafYb7bw/CL2ccGd8iJfp3avJdc8W674kkP9pX8kkfaFPljH/ARWRsGOtAArdRSMnJsVAQ/HHGK+kvAOqw614LsvmV3ij8idT2ZRjn6jBr5uHBzXQeE/FM3hfVRON8llMNlzCp+8vqPcVQI9buwNDvxas2+wkP+jyZzs/2Cfbt7Uy4kU/MprZ0W80/U7BmjeO4tpAGXOMMp6cH/ADmsbWbJ7S7sXtYnW1uZvJeNv+WZ65HtgH8q8uthXfmgepRxSdoz+8Zb6VcXTpPdkx2x5C5+Zx7eg967yxMCWqJDGIo0GAg6Cufvtd0e34mvbaPaMDfIBgfia4bxr8SLRdGbTdEuhNcXAKyTR9Ik7gH1P6V20aMaexxVq0qm5z3xO8Vr4g8QfZ7V91lYgxxkHh3/AIm/TH4Vwm35etJye3FSKua3OcuabqmoaTMJrG7kgb/Zbg/UdDXoOifFRhti1m2yOnnwD+a/4V5oQB2zSfnUuKe41Jo+kNO1Sy1W3E9jcpPGe6nkfUdqK+e7O9ubLLW1xJEzDB2MRkUVm6XZl+0IXDNIzsxZmOSWOc1E/QkdcUUVsZAAGTNNUDHSiigBw68UmOv8qKKAEAZSSrMPocVJ50zrtaWRh6FyaKKAG+Xkcj86aVA4oooAkAUADFKCOmKKKAGMRmkx70UUDBmycDtRRRQB/9k=');background-size:cover;background-position:center center;"></div>
+        <div class="persona-name">Tom</div>
+        <div class="persona-role">Senior industry professional, old friend of Ellie's father. Direct, experienced, knows the difference between excuses and honest reflection.</div>
+        <div class="persona-appears"><strong>Appears in</strong>SIM 02 – Ellie and Tom only. Learner plays Tom.</div>
+      </div>
+
+      <div class="persona-card">
+        <div class="persona-avatar" style="background-image:url('data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCABiAHgDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwCYhf8AnoKblB/y0FUCqn+OozEp/jrhuaWNEyIP+Wq00zIP+Wi1mmBT/HUZgA/jNFwsav2hB/y1Wl+1Rj/lqtcxd3a2m8vFOyr/ABKuRWZfaxHJaFreUAvwFI+b3+lUkwsdpLqUEULStMpVRk45qjB4jtJ2bMgjUdC3evOjNJuJySPTNSK8hyrMAR2p8pSij09b6J1DJKhB6EGmSanFEAWfIJx8ozivOrW/mtdyoQ4PY9BU0d7NOfMkfgdAOBScbAonoJ1BB/GtMOop2dfzrhk1dy+1lUjsR3q9DcidNwBHYg0mhcp1B1Ff761DJqK/3hXPl/eonlx3pAbhvwT94UVzjzH1ooGaA1Zj3pf7Uf1P5VmnxXOeltbj/tmKb/wldz/zxg/79io5p/yl8sP5jV/tV/U/lSHVX9T+VZn/AAllz/zxg/74FJ/wlt1/zyg/74FF5/y/iHLDuLqerTmPyUbaH6nPOKwsMXL5wqjoKuXt9JqUwuJNoOAuFGAKznlVXk5IGOOe9dEL2JdkWIiPMJ7J0BNPQB1Z26Zz9aqQfMpVTjJ6mrTh8dD0xgdqbVmCd0SoqxwmdlOCflA70tohBkDNkEZIpWiJtIk7A5IA7U+LCQsz8kMDj27VF9DS2pHbgN+8BGcfMp4GauwyurFSMccHPWs+1yski9B94c4xVv7QsCLOwyA3FEhLYc95KCRtPHtUBvXbopP0q/N40uWjeMQW+CCM+WKytC8QT6Os4WGJxI2751BxWSc3FvlFaN0rj/PldgBGxJ6DFFb1r4vmvA6m3t1K8giMUVjKtNO3KdMKEJK/Mcoq/LSYq0sXy9KY0dd559yvikxUxSmFaLBcE4VsHFVo4jNKfT0qyoIPrU9jEv2grjtkU07Ia97Qu2FkpdcjrW+uhJKozkZ9KpW4khIkEKuB/Dnmt6w1VZWCm3ZPUNXLOTep3QiloRHw232f5GGQOhrntV0qRYGUcMvPFdk2v20bmJ4pSc4+UVQvtlwrHYyZGRuoTtqOUVLQ4K3ZmkjGDvXhs1JfTx+Sbccspzn0NJcP5FzI0Y5LH8KoPknJ6mt2tbnHzaWIzSHgU4imtTJL2jn99L/u0Umj/wCvk/3aK5KvxnbQ+A2RAAgIFQvF7Vqxxgx81BJHweK7rHm3Ml0xUTJV+SPFVmXmk0Mr7avaZBvu1Y8AAg1X21fsHEcbZODu4HrUSvbQ0pW51cvy6JdvL5kbuykgjBxity0hUXcayKB6im2upxmEKo+fHWo4J76G8Zvssc6n+Ldk/l2rmk5NWPRjGMXcl1ezvEcPZggMRhgueO9RR219Fp8zXcgc87eMcfSt2zvLjZ5lxbCFCTmPdnHuKiv7yCfEaYKnrmhN2sDSbueXX0bR3Txv94daqEVevpPtF7PNjAdyQPbtVJhXSec9yI0w9KkaomPFNCL2kf69/wDdopukn/SX+lFctb4juofAdytuioDI+3jp3qtcogUlckeprbsdIn1K2e7kPlxYOWI5yKr3NvDa2xSXLI/IPrXSpHkpnNSLkVVZea0rlF+8qlVPQGqLLk1oncu5CEqWJdrg05UqZI6Gik7O5JEG2Nsba3Y4zXQ6bG8tusi3cZYcEHiufRhG/Na1kdPcgyxnd3IJFcr0PRpyNGaW5yys8RQDqjE1h6xJ5dlsU/NI2PwrWllhA2wrgdhWRrMfywZHrRFairStFnNOpyarutaMkdVZErc4SC28tbpDKm+PPK+tVZYny8ioRFuxnsPariJ++X60xmf7I8efkL5Iqb2Za1QujjN0w9qKm0NM3rD2ornrP3jsofAewyavBDayWEKCQ5+btkVy2oX4uZAq4+QAYPauyjSyubdTHGjMFAkfHJz2FYI0qzupbp7a3kk8s4K571s9DyFfY5q9cEcHdjg+1ZpO7jFdvZ+BZrlw91OYYTz5ajLfn0FdXp/hjTNMwYLVPN/56N8zfmaamkdVPDTlvoeY2Hh/Ur1kEdrIqt/G42gD15rpl8JQ2dvNPKTP9nt3mcH5QxHReO1dy0ADAg9sVJaW0Vx5kEw+SeNom+hoVRuSR1PDxhBvdni5jEjEsByegHFItmwkJVmA9jXQ6n4cudKu5LW4Ugg/I+OJB6ioobCQxEleQKzk2mXGKaG2sAVVPXiuj8PWUd7q9tazRLJBM22RGUMGGD6/nWVbW+B8xwB616H4S0ZrWN9TuEKHYRCrDBwerf0FOknKSCraMTmdX+G9lfW2/T2FrdLkEcmN+fTt+FcJqfgLX7Hcws/tMY/jt23fp1/SvdI12w4PUimYKvir5mZuhGR80NbSQXISaN43B5V1IP5Gl061jurpIJnCRySAMx7CvpO506z1CPbd2sE69P3iBq5PVPhZoN6pNqJrFyc5hbcv5Gi9zN0WtjzBtJtNN1xIrSbzAy5YZzjmirCaDLoPjC502aXzTEAVk/vKeQaK5a7986KC9w6/w6xNhccnt/Kr/hwD+0bvj+Ef1oorpmebQ/io6lPvGpY/vn6UUVmj2CKX7hpIuOnHSiijqN7GxewxXGhyieNJQI8jeobB9ea88gVfPddoxjpiiita26OWjszc8JW0EmtfPBG21SRuQHB9a7e+P7nHvRRWlP4GZ1PjRnjp+NQz8NRRWJ1IfF941M33R9aKKaJlueSeKwP+FlS8dbWP+tFFFclf4x0vhP/Z');background-size:cover;background-position:center center;"></div>
+        <div class="persona-name">Claire</div>
+        <div class="persona-role">Hiring manager at Canopy (SIM 03). Also John's manager at Canopy (SIM 04). Competent, direct, responds very differently to prepared vs. unprepared candidates.</div>
+        <div class="persona-appears"><strong>Appears in</strong>SIM 03 (interviewer) · SIM 04 S3 (learner plays Claire).</div>
+      </div>
+
+      <div class="persona-card">
+        <div class="persona-avatar" style="background-image:url('data:image/jpeg;base64,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');background-size:cover;background-position:center center;"></div>
+        <div class="persona-name">John</div>
+        <div class="persona-role">Young professional at Canopy. Not a manager but the person the team turns to. Warm, practical, good at reading people.</div>
+        <div class="persona-appears"><strong>Appears in</strong>SIM 04 – John Through the Screen. The constant thread across all 3 scenarios.</div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- GAPS -->
+
+  <!-- LOs -->
+
+  <section style="margin-bottom: 80px;">
+    <div class="section-label">03 · Cross-universe character notes</div>
+    <p style="font-size:14px;color:var(--ink-soft);max-width:640px;margin-bottom:24px;line-height:1.6;">These characters appear in both Maya Universe and Ellie Universe. This section documents their consistency across both – and flags anything IDs should align on before writing new simulations featuring them.</p>
+
+    <div style="display:flex;flex-direction:column;gap:16px;">
+
+      <div style="background:white;border:1px solid var(--border);border-radius:8px;padding:20px 24px;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+          <span style="font-family:'DM Serif Display',serif;font-size:18px;">Tom</span>
+          <span style="font-family:'DM Mono',monospace;font-size:10px;padding:2px 8px;border-radius:10px;background:#d6e4ff;color:#1a3a7a;border:1px solid #a0b8e0;">MU: industry contact · SIM 02</span>
+          <span style="font-family:'DM Mono',monospace;font-size:10px;padding:2px 8px;border-radius:10px;background:#d6f0e4;color:#0a3d2c;border:1px solid #a0d8c0;">EU: senior advisor · SIM 02</span>
+          <span style="font-family:'DM Mono',monospace;font-size:10px;padding:2px 8px;border-radius:10px;background:#e8f5e8;color:#2a7a2a;border:1px solid #a0d0a0;">✓ Consistent</span>
+        </div>
+        <p style="font-size:13px;color:var(--ink-soft);line-height:1.6;">Senior industry professional in both universes. More formal with Maya (cold professional contact introduced through Claire), warmer with Ellie (old friend of her father). The same values run through both: specificity over generalities, evidence over claims. One person, two relationships – no conflict.</p>
+      </div>
+
+      <div style="background:white;border:1px solid var(--border);border-radius:8px;padding:20px 24px;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+          <span style="font-family:'DM Serif Display',serif;font-size:18px;">Claire</span>
+          <span style="font-family:'DM Mono',monospace;font-size:10px;padding:2px 8px;border-radius:10px;background:#d6e4ff;color:#1a3a7a;border:1px solid #a0b8e0;">MU: old acquaintance · SIM 02</span>
+          <span style="font-family:'DM Mono',monospace;font-size:10px;padding:2px 8px;border-radius:10px;background:#d6f0e4;color:#0a3d2c;border:1px solid #a0d8c0;">EU: hiring manager · SIM 03–04</span>
+          <span style="font-family:'DM Mono',monospace;font-size:10px;padding:2px 8px;border-radius:10px;background:#e8f5e8;color:#2a7a2a;border:1px solid #a0d0a0;">✓ Consistent</span>
+        </div>
+        <p style="font-size:13px;color:var(--ink-soft);line-height:1.6;">Brusque with Maya as an old university acquaintance calling in a favour – professional and demanding with Ellie as a hiring manager. The same person can be both. Being impatient with a friend asking for contacts doesn't preclude being sharp and competent at work. No conflict.</p>
+      </div>
+
+      <div style="background:white;border:1px solid var(--border);border-radius:8px;padding:20px 24px;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+          <span style="font-family:'DM Serif Display',serif;font-size:18px;">John</span>
+          <span style="font-family:'DM Mono',monospace;font-size:10px;padding:2px 8px;border-radius:10px;background:#d6e4ff;color:#1a3a7a;border:1px solid #a0b8e0;">MU: mentor · SIM 01</span>
+          <span style="font-family:'DM Mono',monospace;font-size:10px;padding:2px 8px;border-radius:10px;background:#d6f0e4;color:#0a3d2c;border:1px solid #a0d8c0;">EU: team buddy · SIM 04</span>
+          <span style="font-family:'DM Mono',monospace;font-size:10px;padding:2px 8px;border-radius:10px;background:#fdf5dc;color:#7a5c00;border:1px solid #e8d080;">⚠ Monitor</span>
+        </div>
+        <p style="font-size:13px;color:var(--ink-soft);line-height:1.6;">Experienced mentor and former colleague to Maya in SIM 01 – the person the team turns to at Canopy in Ellie Universe. Compatible if the two stories happen at different points in time, or if "team buddy" is read as informal mentorship rather than a junior role. No hard conflict – but IDs should align on who John is before writing new simulations featuring him in either universe. If John is used in a new simulation, his role must always be senior enough to mentor someone more junior – while still being approachable enough to be a peer buddy to others.</p>
+      </div>
+
+      <div style="background:white;border:1px solid var(--border);border-radius:8px;padding:20px 24px;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+          <span style="font-family:'DM Serif Display',serif;font-size:18px;">Alex</span>
+          <span style="font-family:'DM Mono',monospace;font-size:10px;padding:2px 8px;border-radius:10px;background:#d6e4ff;color:#1a3a7a;border:1px solid #a0b8e0;">MU: narrator · all SIMs</span>
+          <span style="font-family:'DM Mono',monospace;font-size:10px;padding:2px 8px;border-radius:10px;background:#d6f0e4;color:#0a3d2c;border:1px solid #a0d8c0;">EU: narrator · all SIMs</span>
+          <span style="font-family:'DM Mono',monospace;font-size:10px;padding:2px 8px;border-radius:10px;background:#e8f5e8;color:#2a7a2a;border:1px solid #a0d0a0;">✓ Intentional</span>
+        </div>
+        <p style="font-size:13px;color:var(--ink-soft);line-height:1.6;">Same character intentionally across both universes. Narrator and guide – warm, direct, never corporate. Exists outside the story world in both. No conflict and no ambiguity.</p>
+      </div>
+
+    </div>
+  </section>
+  <section class="lo-section">
+    <div class="section-label">04 · Learning objectives by simulation</div>
+    <div class="lo-grid">
+
+      <div class="lo-card">
+        <div class="lo-sim-name">SIM 01 · Ellie on the Spot</div>
+        <ul class="lo-list">
+          <li>Understand that being yourself and being professional are not opposites</li>
+          <li>Recognize when your natural way of expressing yourself may not land in a professional context</li>
+          <li>Understand that a good self-introduction connects real experiences to what the role needs</li>
+          <li>Recognize that vague encouragement doesn't help – specific questions do</li>
+          <li>Recognize the difference between generic enthusiasm and demonstrable interest</li>
+          <li>Understand that preparation is a signal of how seriously you take an opportunity</li>
+          <li>Understand that difficult interview questions are opportunities to show self-awareness</li>
+          <li>Recognize the difference between lying, oversharing, and honest framing</li>
+        </ul>
+      </div>
+
+      <div class="lo-card">
+        <div class="lo-sim-name">SIM 02 · Ellie and Tom</div>
+        <ul class="lo-list">
+          <li>Recognize that punctuality signals commitment before you've said a word</li>
+          <li>Identify the difference between explaining a situation and taking responsibility for it</li>
+          <li>Recognize how deflecting feedback affects the impression you make</li>
+          <li>Recognize that everyday experiences can count as transferable skills</li>
+          <li>Identify the difference between generic self-descriptions and specific, evidence-based answers</li>
+          <li>Recognize when an answer undersells genuine experience</li>
+          <li>Recognize that asking for feedback after an interview is professional, not an imposition</li>
+          <li>Identify the difference between vague and actionable feedback – and how to ask for more</li>
+          <li>Recognize how to receive feedback constructively rather than defensively</li>
+        </ul>
+      </div>
+
+      <div class="lo-card">
+        <div class="lo-sim-name">SIM 03 · This Is It, Ellie</div>
+        <ul class="lo-list">
+          <li>Recognize that an interview begins before the formal questions start</li>
+          <li>Identify what makes a strong first introduction (name, role, interviewer's name)</li>
+          <li>Distinguish between a generic answer and one that shows genuine interest in the company</li>
+          <li>Recognize how connecting company research naturally helps a candidate stand out</li>
+          <li>Distinguish between active listening and waiting to speak</li>
+          <li>Recognize how attitude comes through in word choice, independently of what a candidate knows</li>
+          <li>Recognize that an interviewer's questions are designed to find the right person – answers should be oriented toward that</li>
+        </ul>
+      </div>
+
+      <div class="lo-card">
+        <div class="lo-sim-name">SIM 04 · John Through the Screen</div>
+        <ul class="lo-list">
+          <li>Recognize that punctuality and professional presentation carry the same weight in virtual meetings</li>
+          <li>Distinguish between an appropriate acknowledgment of a mistake and a dismissive response</li>
+          <li>Identify what a professional response looks like when something goes wrong: brief, direct, forward-looking</li>
+          <li>Recognize that technical difficulties in a remote setting are the professional's responsibility to address</li>
+          <li>Distinguish between waiting for things to improve and taking proactive action</li>
+          <li>Distinguish between closed responses that shut a conversation down and open questions that invite real dialogue</li>
+          <li>Identify what active listening looks like when a team member raises a difficulty</li>
+        </ul>
+      </div>
+      <div class="lo-card">
+        <div class="lo-sim-name">SIM 05 · New Role, Same Michael</div>
+        <ul class="lo-list">
+          <li>Recognize when to disclose a personal limitation to a manager and identify how to do it professionally</li>
+          <li>Distinguish between confidently sharing relevant experience and assuming you don't need guidance</li>
+          <li>Identify the appropriate response when you don't know how to do something you're expected to do</li>
+          <li>Recognize what a professional interaction with a manager looks like — tone, timing, and what to share</li>
+          <li>Identify how to respond when a manager changes plans or cancels a commitment</li>
+          <li>Recognize the difference between owning a mistake, deflecting blame, and handling it alone</li>
+        </ul>
+      </div>
+
+      <div class="lo-card">
+        <div class="lo-sim-name">SIM 06 · Michael on Screen</div>
+        <ul class="lo-list">
+          <li>Identify the key differences between in-person and virtual interviews and what preparation is specific to the virtual format</li>
+          <li>Recognize the behaviors and decisions that create a strong first impression in a virtual setting</li>
+          <li>Identify the practical steps required to prepare technology, environment, and on-camera presence</li>
+          <li>Recognize the limitations of using a mobile phone as the primary device for a virtual interview</li>
+          <li>Identify the practical steps available when the ideal setup is not accessible</li>
+          <li>Describe what a realistic contingency plan looks like when technology is not optimal</li>
+        </ul>
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- CROSS-UNIVERSE CHARACTER NOTES -->
+
+  <!-- PRODUCTION RULES -->
+
+</main>
+
+<footer>
+  <span>Ellie Universe · Simulation Map v1.0</span>
+  <span>Ellie's path: On the Spot → Ellie and Tom → This Is It → John Through the Screen → New Role, Same Michael → Michael on Screen</span>
+</footer>
+
+</body>
+</html>
